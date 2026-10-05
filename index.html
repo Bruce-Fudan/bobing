@@ -21,7 +21,7 @@
 			obj.innerHTML = " ";
 			var tot = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 			var res = ["一秀", "二举", "三红", "四进", "对堂", "状元", "四进带一秀", "四进带二举", "无"];
-			var res_id = 8; var how_many_four = 0;//四进就res_id+=6;
+			var res_id = 8; var how_many_four = 0;
 			for (var a = 1; a <= 6; a++) {
 				obj = document.getElementById(a);
 				var s = Math.floor(Math.random() * 6 + 1);
@@ -35,7 +35,7 @@
 			for (var a = 1; a <= 6; a++) {
 				if (tot[a] == 4 && a != 4) {
 					if (how_many_four >= 1) {
-						res_id = how_many_four + 6;
+						res_id = how_many_four + 5;
 					}
 					else {
 						res_id = 3;
