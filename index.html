@@ -1,8 +1,136 @@
-<html>
+<!DOCTYPE html>
+<html lang="zh-CN">
 
 <head>
-	<link rel="shortcut icon" href="4.png">
 	<meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+	<link rel="shortcut icon" href="4.png">
+	<title>博饼</title>
+	<style>
+		:root{
+			--pad: clamp(12px, 3vw, 40px);        /* 屏幕四周留白 */
+			--gap: clamp(4px, 1.2vw, 16px);       /* 骰子间距 */
+			--dice-max: 860px;                    /* 骰子整行最大宽度，想更大改这里 */
+			--fs: clamp(15px, 0.85vw + 10px, 20px);
+		}
+		*{ box-sizing: border-box; }
+		html{ -webkit-text-size-adjust: 100%; }
+		body{
+			margin: 0;
+			min-height: 100vh;
+			min-height: 100dvh;
+			padding: var(--pad);
+			background: FloralWhite;
+			color: #333;
+			font-family: system-ui, -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif;
+			font-size: var(--fs);
+			line-height: 1.6;
+			display: grid;
+			place-items: center;          /* 卡片整体居中（内容超高时也不会被裁掉） */
+		}
+		.wrap{
+			width: 100%;
+			max-width: 1100px;            /* 大屏不再无限拉伸 */
+			margin: 0 auto;
+			padding: clamp(16px, 2.6vw, 34px) clamp(12px, 2.4vw, 32px);
+			background: #fff;
+			border-radius: clamp(14px, 2vw, 22px);
+			box-shadow: 0 10px 30px rgba(0, 0, 0, .08);
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			gap: clamp(10px, 1.8vh, 20px);
+		}
+
+		/* 顶部链接 */
+		.links{
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: .3em 1.4em;
+			font-size: .95em;
+		}
+		.links a{ color: #0a58ca; text-decoration: none; }
+		.links a:hover{ text-decoration: underline; }
+
+		/* 统计：居中，只在空格处断行，中文词组整体不拆 */
+		#f{
+			margin: 0;
+			width: 100%;
+			text-align: center;
+			color: #6b6b6b;
+			font-size: .95em;
+			line-height: 1.8;
+			word-break: keep-all;
+		}
+
+		/* 结果文字：随屏幕缩放，且不折行 */
+		#r, #zy{
+			margin: 0;
+			width: 100%;
+			text-align: center;
+			font-weight: 700;
+			color: green;
+			line-height: 1.25;
+			min-height: 1.25em;           /* 预留一行，点击时不跳版 */
+			word-break: keep-all;
+		}
+		#r{ font-size: clamp(22px, 4.2vw, 48px); }
+		#zy{ font-size: clamp(17px, 2.8vw, 34px); }
+
+		/* 按钮 */
+		.roll{
+			font: inherit;
+			font-size: clamp(17px, 2.2vw, 24px);
+			font-weight: 700;
+			color: #fff;
+			background: #c62828;
+			border: 0;
+			border-radius: 999px;
+			padding: .55em 2.4em;
+			cursor: pointer;
+			box-shadow: 0 6px 16px rgba(198, 40, 40, .28);
+			transition: transform .08s ease, box-shadow .2s ease;
+			touch-action: manipulation;
+			-webkit-tap-highlight-color: transparent;
+		}
+		.roll:hover{ box-shadow: 0 8px 20px rgba(198, 40, 40, .34); }
+		.roll:active{ transform: translateY(2px); box-shadow: 0 3px 10px rgba(198, 40, 40, .3); }
+		.roll:focus-visible{ outline: 3px solid #ffb300; outline-offset: 3px; }
+
+		/* 骰子：六个永远一行，等分整行宽度自动缩放 */
+		.dice{
+			display: flex;
+			flex-wrap: nowrap;
+			justify-content: center;
+			align-items: center;
+			gap: var(--gap);
+			width: 100%;
+			max-width: var(--dice-max);
+			margin: 0 auto;
+		}
+		.dice img{
+			flex: 0 0 auto;
+			width: calc((100% - 5 * var(--gap)) / 6);
+			height: auto;
+			aspect-ratio: 1 / 1;          /* 未加载时也先占好方块，不跳版 */
+			object-fit: contain;
+			display: block;
+			user-select: none;
+			-webkit-user-drag: none;
+		}
+
+		/* 说明图：自适应宽度，小图不放大以免发虚 */
+		.info{
+			width: 100%;
+			max-width: var(--dice-max);
+			margin: 0 auto;
+		}
+		.info img{ display: block; max-width: 100%; height: auto; margin: 0 auto; }
+
+		/* 保证 hidden 属性仍然生效（否则上面的 display:block 会把它顶掉） */
+		[hidden]{ display: none !important; }
+	</style>
 	<script type="text/javascript">
 		var total = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 		var ccc = 0;
@@ -21,7 +149,7 @@
 			obj.innerHTML = " ";
 			var tot = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 			var res = ["一秀", "二举", "三红", "四进", "对堂", "状元", "四进带一秀", "四进带二举", "无"];
-			var res_id = 8; var how_many_four = 0;
+			var res_id = 8; var how_many_four = 0;//四进就res_id+=6;
 			for (var a = 1; a <= 6; a++) {
 				obj = document.getElementById(a);
 				var s = Math.floor(Math.random() * 6 + 1);
@@ -85,28 +213,31 @@
 			}
 		}
 	</script>
-	<title>博饼</title>
 </head>
 
-<body bgcolor=FloralWhite>
-	<a href="javascript:show()">关于博饼概率</a>
-	<a href="https://bruce-fudan.github.io/">关于作者</a>
-	<p></p>
-	<p id="f"></p>
-	<button type="button" onclick="game()">投骰子</button>
-	<p></p>
-	<img src="" id="1" />
-	<img src="" id="2" />
-	<img src="" id="3" />
-	<img src="" id="4" />
-	<img src="" id="5" />
-	<img src="" id="6" />
-	<p style="color:green;" id="r"></p>
-	<p style="color:green;" id="zy"></p>
-	<img src="zy.png" id="111" hidden=true></img>
-	<p></p>
-	<img src="pt.png" id="222" hidden=true></img>
-
+<body>
+	<div class="wrap">
+		<div class="links">
+			<a href="javascript:show()">关于博饼概率</a>
+			<a href="https://bruce-fudan.github.io/">关于作者</a>
+		</div>
+		<p id="f"></p>
+		<button type="button" class="roll" onclick="game()">投骰子</button>
+		<div class="dice">
+			<img id="1" alt="" />
+			<img id="2" alt="" />
+			<img id="3" alt="" />
+			<img id="4" alt="" />
+			<img id="5" alt="" />
+			<img id="6" alt="" />
+		</div>
+		<p id="r"></p>
+		<p id="zy"></p>
+		<div class="info">
+			<img src="zy.png" id="111" hidden alt="状元说明" />
+			<img src="pt.png" id="222" hidden alt="概率说明" />
+		</div>
+	</div>
 </body>
 
 </html>
